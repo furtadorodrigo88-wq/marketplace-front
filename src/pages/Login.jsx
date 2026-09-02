@@ -115,6 +115,14 @@ function Login({ entrar }) {
                 </button>
 
             </form>
+
+            <p>
+                Não tens uma conta?
+                {" "}
+                <Link to="/register">
+                    Registrar
+                </Link>
+            </p>
         </div>
     );
 }
