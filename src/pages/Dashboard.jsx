@@ -11,12 +11,18 @@ function Dashboard() {
     const [descricao, setDescricao] = useState("");
     const [preco, setPreco] = useState("");
     const [precoComDesconto, setPrecoComDesconto] = useState("");
-    const [imagenCapa, setImagenCapa] = useState("");
+    const [imagemCapa, setImagemCapa] = useState(null);
     const [estado, setEstado] = useState(true);
 
     const [mensagem, setMensagem] = useState("");
     const [erro, setErro] = useState("");
 
+
+    /*
+     * =====================================================
+     * GET - LISTAR SERVIÇOS
+     * =====================================================
+     */
 
     const carregarServicos = async () => {
 
@@ -37,7 +43,6 @@ function Dashboard() {
                     },
                 }
             );
-
 
             if (
                 resposta.status === 401 ||
@@ -66,6 +71,12 @@ function Dashboard() {
     };
 
 
+    /*
+     * =====================================================
+     * POST - CRIAR SERVIÇO
+     * =====================================================
+     */
+
     const criarServico = async (event) => {
 
         event.preventDefault();
@@ -82,6 +93,13 @@ function Dashboard() {
                 return;
             }
 
+
+            /*
+             * =================================================
+             * 1 - CRIAR SERVIÇO
+             * =================================================
+             */
+
             const resposta = await fetch(
                 `${import.meta.env.VITE_API_URL}/v1/servicos`,
                 {
@@ -96,13 +114,26 @@ function Dashboard() {
                         titulo: nome,
                         descricao: descricao,
                         preco: Number(preco),
-                        precoComDesconto: Number(precoComDesconto),
+                        precoComDesconto:
+                            precoComDesconto
+                                ? Number(precoComDesconto)
+                                : 0,
                         estado: estado,
-                        imagenCapa: imagenCapa,
+
+                        /*
+                         * A API recebe texto aqui.
+                         * O ficheiro será enviado depois
+                         * pelo endpoint upload-capa.
+                         */
+                        imagenCapa: "",
                     }),
                 }
             );
 
+
+            /*
+             * Token inválido
+             */
 
             if (
                 resposta.status === 401 ||
@@ -116,18 +147,30 @@ function Dashboard() {
                 return;
             }
 
+
+            /*
+             * Ler resposta
+             */
+
             const texto = await resposta.text();
 
             let dados = {};
 
             try {
+
                 dados = JSON.parse(texto);
+
             } catch {
+
                 dados = {
                     mensagem: texto
                 };
             }
 
+
+            /*
+             * Verificar erro na criação
+             */
 
             if (!resposta.ok) {
 
@@ -142,26 +185,151 @@ function Dashboard() {
             }
 
 
-            setMensagem("Serviço criado com sucesso!");
+            /*
+             * =================================================
+             * 2 - PEGAR ID DO SERVIÇO
+             * =================================================
+             */
+
+            const idServico = dados.id;
+
+            console.log(
+                "Serviço criado. ID:",
+                idServico
+            );
+
+
+            /*
+             * =================================================
+             * 3 - FAZER UPLOAD DA CAPA
+             * =================================================
+             */
+
+            if (imagemCapa && idServico) {
+
+                const formData = new FormData();
+
+                formData.append(
+                    "file",
+                    imagemCapa
+                );
+
+
+                const uploadResposta = await fetch(
+                    `${import.meta.env.VITE_API_URL}/v1/servicos/${idServico}/upload-capa`,
+                    {
+                        method: "POST",
+
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+
+                        body: formData,
+                    }
+                );
+
+
+                /*
+                 * Token inválido
+                 */
+
+                if (
+                    uploadResposta.status === 401 ||
+                    uploadResposta.status === 403
+                ) {
+
+                    localStorage.removeItem("meu_token");
+
+                    navigate("/login");
+
+                    return;
+                }
+
+
+                /*
+                 * Verificar erro no upload
+                 */
+
+                if (!uploadResposta.ok) {
+
+                    const erroUpload =
+                        await uploadResposta.text();
+
+                    console.error(
+                        "Erro no upload:",
+                        erroUpload
+                    );
+
+                    setErro(
+                        "Serviço criado, mas ocorreu um erro ao enviar a imagem."
+                    );
+
+                    carregarServicos();
+
+                    return;
+                }
+
+                console.log(
+                    "Imagem enviada com sucesso!"
+                );
+            }
+
+
+            /*
+             * =================================================
+             * 4 - SUCESSO
+             * =================================================
+             */
+
+            setMensagem(
+                imagemCapa
+                    ? "Serviço e imagem criados com sucesso!"
+                    : "Serviço criado com sucesso!"
+            );
+
+
+            /*
+             * Limpar formulário
+             */
 
             setNome("");
             setDescricao("");
             setPreco("");
             setPrecoComDesconto("");
             setEstado(true);
-            setImagenCapa("");
+            setImagemCapa(null);
+
+
+            /*
+             * Limpar input de ficheiro
+             */
+
+            event.target.reset();
+
+
+            /*
+             * Atualizar lista
+             */
 
             carregarServicos();
+
 
         } catch (error) {
 
             console.error(error);
 
-            setErro("Erro ao conectar com o servidor.");
+            setErro(
+                "Erro ao conectar com o servidor."
+            );
         }
     };
 
 
+    /*
+     * =====================================================
+     * LOGOUT
+     * =====================================================
+     */
 
     const logout = () => {
 
@@ -171,6 +339,12 @@ function Dashboard() {
     };
 
 
+    /*
+     * =====================================================
+     * CARREGAR SERVIÇOS AO ABRIR DASHBOARD
+     * =====================================================
+     */
+
     useEffect(() => {
 
         carregarServicos();
@@ -178,6 +352,11 @@ function Dashboard() {
     }, []);
 
 
+    /*
+     * =====================================================
+     * HTML DO DASHBOARD
+     * =====================================================
+     */
 
     return (
         <div>
@@ -192,17 +371,20 @@ function Dashboard() {
 
             <h2>Serviços</h2>
 
+
             {erro && (
                 <p>
                     {erro}
                 </p>
             )}
 
+
             {mensagem && (
                 <p>
                     {mensagem}
                 </p>
             )}
+
 
             {servicos.length === 0 ? (
 
@@ -219,7 +401,7 @@ function Dashboard() {
                         <div key={servico.id}>
 
                             <h3>
-                                {servico.titulo || servico.nome}
+                                {servico.titulo}
                             </h3>
 
                             <p>
@@ -261,7 +443,10 @@ function Dashboard() {
             <hr />
 
 
-            <h2>Criar Serviço</h2>
+            <h2>
+                Criar Serviço
+            </h2>
+
 
             <form onSubmit={criarServico}>
 
@@ -285,7 +470,9 @@ function Dashboard() {
 
                 </div>
 
+
                 <br />
+
 
                 <div>
 
@@ -306,7 +493,9 @@ function Dashboard() {
 
                 </div>
 
+
                 <br />
+
 
                 <div>
 
@@ -329,7 +518,9 @@ function Dashboard() {
 
                 </div>
 
+
                 <br />
+
 
                 <div>
 
@@ -344,14 +535,18 @@ function Dashboard() {
                         step="0.01"
                         value={precoComDesconto}
                         onChange={(event) =>
-                            setPrecoComDesconto(event.target.value)
+                            setPrecoComDesconto(
+                                event.target.value
+                            )
                         }
                         placeholder="Preço com desconto"
                     />
 
                 </div>
 
+
                 <br />
+
 
                 <div>
 
@@ -365,13 +560,17 @@ function Dashboard() {
                         type="checkbox"
                         checked={estado}
                         onChange={(event) =>
-                            setEstado(event.target.checked)
+                            setEstado(
+                                event.target.checked
+                            )
                         }
                     />
 
                 </div>
 
+
                 <br />
+
 
                 <div>
 
@@ -383,15 +582,19 @@ function Dashboard() {
 
                     <input
                         type="file"
+                        accept="image/*"
                         onChange={(event) =>
-                            setImagenCapa(event.target.files[0])
+                            setImagemCapa(
+                                event.target.files[0]
+                            )
                         }
-                        placeholder="URL da imagem"
                     />
 
                 </div>
 
+
                 <br />
+
 
                 <button type="submit">
                     Criar Serviço
@@ -404,4 +607,3 @@ function Dashboard() {
 }
 
 export default Dashboard;
-
