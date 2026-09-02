@@ -18,19 +18,12 @@ function Dashboard() {
     const [erro, setErro] = useState("");
 
 
-    /*
-     * =====================================================
-     * GET - LISTAR SERVIÇOS
-     * =====================================================
-     */
-
     const carregarServicos = async () => {
 
         try {
 
             const token = localStorage.getItem("meu_token");
 
-            // Se não existir token, voltar para Login
             if (!token) {
                 navigate("/login");
                 return;
@@ -45,9 +38,7 @@ function Dashboard() {
                 }
             );
 
-            /*
-             * Token inválido ou expirado
-             */
+
             if (
                 resposta.status === 401 ||
                 resposta.status === 403
@@ -74,12 +65,6 @@ function Dashboard() {
         }
     };
 
-
-    /*
-     * =====================================================
-     * POST - CRIAR SERVIÇO
-     * =====================================================
-     */
 
     const criarServico = async (event) => {
 
@@ -118,9 +103,7 @@ function Dashboard() {
                 }
             );
 
-            /*
-             * Token inválido ou expirado
-             */
+
             if (
                 resposta.status === 401 ||
                 resposta.status === 403
@@ -145,9 +128,7 @@ function Dashboard() {
                 };
             }
 
-            /*
-             * Verificar erro
-             */
+
             if (!resposta.ok) {
 
                 setErro(
@@ -160,14 +141,9 @@ function Dashboard() {
                 return;
             }
 
-            /*
-             * Serviço criado
-             */
+
             setMensagem("Serviço criado com sucesso!");
 
-            /*
-             * Limpar formulário
-             */
             setNome("");
             setDescricao("");
             setPreco("");
@@ -175,9 +151,6 @@ function Dashboard() {
             setEstado(true);
             setImagenCapa("");
 
-            /*
-             * Atualizar lista
-             */
             carregarServicos();
 
         } catch (error) {
@@ -189,11 +162,6 @@ function Dashboard() {
     };
 
 
-    /*
-     * =====================================================
-     * LOGOUT
-     * =====================================================
-     */
 
     const logout = () => {
 
@@ -203,12 +171,6 @@ function Dashboard() {
     };
 
 
-    /*
-     * =====================================================
-     * CARREGAR SERVIÇOS
-     * =====================================================
-     */
-
     useEffect(() => {
 
         carregarServicos();
@@ -216,11 +178,6 @@ function Dashboard() {
     }, []);
 
 
-    /*
-     * =====================================================
-     * HTML DO DASHBOARD
-     * =====================================================
-     */
 
     return (
         <div>
@@ -390,7 +347,6 @@ function Dashboard() {
                             setPrecoComDesconto(event.target.value)
                         }
                         placeholder="Preço com desconto"
-                        required
                     />
 
                 </div>
@@ -426,10 +382,9 @@ function Dashboard() {
                     <br />
 
                     <input
-                        type="text"
-                        value={imagenCapa}
+                        type="file"
                         onChange={(event) =>
-                            setImagenCapa(event.target.value)
+                            setImagenCapa(event.target.files[0])
                         }
                         placeholder="URL da imagem"
                     />
