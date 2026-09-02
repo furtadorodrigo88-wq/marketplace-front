@@ -193,6 +193,7 @@ function Dashboard() {
              */
 
             const idServico = dados.id;
+            console.log("RESPOSTA COMPLETA DA CRIAÇÃO:", dados);
 
             console.log(
                 "Serviço criado. ID:",
@@ -228,6 +229,8 @@ function Dashboard() {
                         body: formData,
                     }
                 );
+
+                
 
 
                 /*
