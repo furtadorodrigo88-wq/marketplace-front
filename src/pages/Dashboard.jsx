@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 function Dashboard() {
+
+    const navigate = useNavigate();
 
     const [servicos, setServicos] = useState([]);
 
@@ -14,6 +17,7 @@ function Dashboard() {
     const [mensagem, setMensagem] = useState("");
     const [erro, setErro] = useState("");
 
+
     /*
      * =====================================================
      * GET - LISTAR SERVIÇOS
@@ -24,49 +28,42 @@ function Dashboard() {
 
         try {
 
-            /*
-             * Vamos buscar o token guardado no login.
-             */
             const token = localStorage.getItem("meu_token");
 
-            /*
-             * Fazemos o pedido GET para a API.
-             */
+            // Se não existir token, voltar para Login
+            if (!token) {
+                navigate("/login");
+                return;
+            }
+
             const resposta = await fetch(
                 `${import.meta.env.VITE_API_URL}/v1/servicos?page=0&size=10`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
-                },
+                }
             );
 
             /*
-             * Se o token for inválido ou expirado.
+             * Token inválido ou expirado
              */
-            if (resposta.status === 401 || resposta.status === 403) {
+            if (
+                resposta.status === 401 ||
+                resposta.status === 403
+            ) {
 
                 localStorage.removeItem("meu_token");
 
-                window.location.reload();
+                navigate("/login");
 
                 return;
             }
 
-            /*
-             * Transformamos a resposta em JSON.
-             */
             const dados = await resposta.json();
 
-            /*
-             * A API paginada normalmente devolve:
-             *
-             * {
-             *   content: [...]
-             * }
-             *
-             * Por isso usamos dados.content.
-             */
+            console.log("Serviços recebidos:", dados);
+
             setServicos(dados.content || []);
 
         } catch (error) {
@@ -74,7 +71,6 @@ function Dashboard() {
             console.error(error);
 
             setErro("Erro ao carregar os serviços.");
-
         }
     };
 
@@ -94,14 +90,13 @@ function Dashboard() {
 
         try {
 
-            /*
-             * Buscar o token guardado no localStorage.
-             */
             const token = localStorage.getItem("meu_token");
 
-            /*
-             * Fazer POST para a API.
-             */
+            if (!token) {
+                navigate("/login");
+                return;
+            }
+
             const resposta = await fetch(
                 `${import.meta.env.VITE_API_URL}/v1/servicos`,
                 {
@@ -109,70 +104,79 @@ function Dashboard() {
 
                     headers: {
                         "Content-Type": "application/json",
-
                         Authorization: `Bearer ${token}`,
                     },
 
-                    /*
-                     * Dados enviados para o backend.
-                     */
                     body: JSON.stringify({
-                        nome: nome,
+                        titulo: nome,
                         descricao: descricao,
                         preco: Number(preco),
                         precoComDesconto: Number(precoComDesconto),
                         estado: estado,
                         imagenCapa: imagenCapa,
                     }),
-                },
+                }
             );
 
             /*
-             * Verificar autenticação.
+             * Token inválido ou expirado
              */
-            if (resposta.status === 401 || resposta.status === 403) {
+            if (
+                resposta.status === 401 ||
+                resposta.status === 403
+            ) {
 
                 localStorage.removeItem("meu_token");
 
-                window.location.reload();
+                navigate("/login");
 
                 return;
             }
 
-            /*
-             * Transformar resposta em JSON.
-             */
-            const dados = await resposta.json();
+            const texto = await resposta.text();
+
+            let dados = {};
+
+            try {
+                dados = JSON.parse(texto);
+            } catch {
+                dados = {
+                    mensagem: texto
+                };
+            }
 
             /*
-             * Verificar se houve erro.
+             * Verificar erro
              */
             if (!resposta.ok) {
 
                 setErro(
-                    dados.erro || "Erro ao criar o serviço."
+                    dados.erro ||
+                    dados.Erro ||
+                    dados.mensagem ||
+                    "Erro ao criar o serviço."
                 );
 
                 return;
             }
 
             /*
-             * Serviço criado.
+             * Serviço criado
              */
             setMensagem("Serviço criado com sucesso!");
 
             /*
-             * Limpar formulário.
+             * Limpar formulário
              */
             setNome("");
             setDescricao("");
             setPreco("");
             setPrecoComDesconto("");
             setEstado(true);
-            setimagenCapa("");
+            setImagenCapa("");
 
             /*
-             * Atualizar a lista de serviços.
+             * Atualizar lista
              */
             carregarServicos();
 
@@ -193,21 +197,15 @@ function Dashboard() {
 
     const logout = () => {
 
-        /*
-         * Remover o token.
-         */
         localStorage.removeItem("meu_token");
 
-        /*
-         * Voltar para o Login.
-         */
-        window.location.reload();
+        navigate("/login");
     };
 
 
     /*
      * =====================================================
-     * CARREGAR SERVIÇOS QUANDO ABRIR O DASHBOARD
+     * CARREGAR SERVIÇOS
      * =====================================================
      */
 
@@ -264,7 +262,7 @@ function Dashboard() {
                         <div key={servico.id}>
 
                             <h3>
-                                {servico.nome}
+                                {servico.titulo || servico.nome}
                             </h3>
 
                             <p>
@@ -274,14 +272,22 @@ function Dashboard() {
                             <p>
                                 Preço: {servico.preco}
                             </p>
+
                             <p>
-                                Preço com desconto: {servico.precoComDesconto}
+                                Preço com desconto:{" "}
+                                {servico.precoComDesconto}
                             </p>
+
                             <p>
-                                Estado: {servico.estado ? "Ativo" : "Inativo"}
+                                Estado:{" "}
+                                {servico.estado
+                                    ? "Ativo"
+                                    : "Inativo"}
                             </p>
+
                             <p>
-                                Imagem de capa: {servico.imagenCapa}
+                                Imagem de capa:{" "}
+                                {servico.imagenCapa}
                             </p>
 
                             <hr />
@@ -313,7 +319,9 @@ function Dashboard() {
                     <input
                         type="text"
                         value={nome}
-                        onChange={(event) => setNome(event.target.value)}
+                        onChange={(event) =>
+                            setNome(event.target.value)
+                        }
                         placeholder="Nome do serviço"
                         required
                     />
@@ -332,7 +340,9 @@ function Dashboard() {
 
                     <textarea
                         value={descricao}
-                        onChange={(event) => setDescricao(event.target.value)}
+                        onChange={(event) =>
+                            setDescricao(event.target.value)
+                        }
                         placeholder="Descrição do serviço"
                         required
                     />
@@ -351,8 +361,11 @@ function Dashboard() {
 
                     <input
                         type="number"
+                        step="0.01"
                         value={preco}
-                        onChange={(event) => setPreco(event.target.value)}
+                        onChange={(event) =>
+                            setPreco(event.target.value)
+                        }
                         placeholder="Preço"
                         required
                     />
@@ -371,8 +384,11 @@ function Dashboard() {
 
                     <input
                         type="number"
+                        step="0.01"
                         value={precoComDesconto}
-                        onChange={(event) => setPrecoComDesconto(event.target.value)}
+                        onChange={(event) =>
+                            setPrecoComDesconto(event.target.value)
+                        }
                         placeholder="Preço com desconto"
                         required
                     />
@@ -392,7 +408,9 @@ function Dashboard() {
                     <input
                         type="checkbox"
                         checked={estado}
-                        onChange={(event) => setEstado(event.target.checked)}
+                        onChange={(event) =>
+                            setEstado(event.target.checked)
+                        }
                     />
 
                 </div>
@@ -408,8 +426,12 @@ function Dashboard() {
                     <br />
 
                     <input
-                        type="file"
-                        onChange={(e) => setimagenCapa(e.target.files[0])}
+                        type="text"
+                        value={imagenCapa}
+                        onChange={(event) =>
+                            setImagenCapa(event.target.value)
+                        }
+                        placeholder="URL da imagem"
                     />
 
                 </div>
@@ -427,3 +449,4 @@ function Dashboard() {
 }
 
 export default Dashboard;
+

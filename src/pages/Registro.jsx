@@ -13,33 +13,45 @@ function Registro() {
 
         e.preventDefault();
 
-        const resposta = await fetch(
-            `${import.meta.env.VITE_API_URL}/auth/register`,
-            {
-                method: "POST",
+        try {
 
-                headers: {
-                    "Content-Type": "application/json"
-                },
+            const resposta = await fetch(
+                `${import.meta.env.VITE_API_URL}/auth/register`,
+                {
+                    method: "POST",
 
-                body: JSON.stringify({
-                    username,
-                    password,
-                    email
-                })
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        username: username,
+                        password: password,
+                        email: email
+                    })
+                }
+            );
+
+            if (resposta.ok) {
+
+                alert("Conta criada com sucesso!");
+
+                navigate("/login");
+
+            } else {
+
+                const erro = await resposta.text();
+
+                alert(
+                    erro || "Erro no registro!"
+                );
             }
-        );
 
-        if (resposta.ok) {
+        } catch (error) {
 
-            alert("Conta criada com sucesso!");
+            console.error(error);
 
-            navigate("/login");;
-
-        } else {
-
-            alert("Erro no registro!");
-
+            alert("Erro ao conectar com o servidor.");
         }
     };
 
@@ -54,22 +66,40 @@ function Registro() {
                     type="text"
                     placeholder="Username"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    onChange={(e) =>
+                        setUsername(e.target.value)
+                    }
+                    required
                 />
+
+                <br />
+                <br />
 
                 <input
                     type="email"
                     placeholder="Email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) =>
+                        setEmail(e.target.value)
+                    }
+                    required
                 />
+
+                <br />
+                <br />
 
                 <input
                     type="password"
                     placeholder="Password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) =>
+                        setPassword(e.target.value)
+                    }
+                    required
                 />
+
+                <br />
+                <br />
 
                 <button type="submit">
                     Registar

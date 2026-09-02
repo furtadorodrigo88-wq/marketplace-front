@@ -1,27 +1,21 @@
-import { useState } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
 import Login from "./pages/Login";
+import Registro from "./pages/Registro";
 import Dashboard from "./pages/Dashboard";
 
 function App() {
-  const [token, setToken] = useState(
-    localStorage.getItem("meu_token")
+  return (
+    <BrowserRouter>
+      <Routes>
+
+        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Registro />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+      </Routes>
+    </BrowserRouter>
   );
-
-  const entrar = (novoToken) => {
-    localStorage.setItem("meu_token", novoToken);
-    setToken(novoToken);
-  };
-
-  const sair = () => {
-    localStorage.removeItem("meu_token");
-    setToken(null);
-  };
-
-  if (!token) {
-    return <Login entrar={entrar} />;
-  }
-
-  return <Dashboard sair={sair} />;
 }
 
 export default App;

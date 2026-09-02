@@ -1,10 +1,13 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
-function Login({ entrar }) {
+function Login() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
 
     const [erro, setErro] = useState("");
+
+    const navigate = useNavigate();
 
     const fazerLogin = async (event) => {
         event.preventDefault();
@@ -28,34 +31,31 @@ function Login({ entrar }) {
                 }
             );
 
-            const token = await resposta.text();
+            const dados = await resposta.text();
 
-            console.log("Resposta do login:", token);
+            console.log("Resposta do login:", dados);
 
             if (!resposta.ok) {
                 setErro(
-                    token.erro ||
-                    token.Erro ||
-                    "Username ou password inválidos"
+                    dados || "Username ou password inválidos"
                 );
 
                 return;
-            } else {
-                console.log("Token recebido:", token);
-
-
-
-                if (!resposta.ok) {
-                    setErro("Username ou password inválidos");
-                    return;
-                }
-                localStorage.setItem("meu_token", token);
-                entrar(token);
             }
 
+            const token = dados;
+
+            console.log("Token recebido:", token);
+
+            // Guardar token
+            localStorage.setItem("meu_token", token);
+
+            // Ir para o Dashboard
+            navigate("/dashboard");
 
         } catch (error) {
             console.error(error);
+
             setErro("Erro ao conectar com o servidor.");
         }
     };
@@ -63,22 +63,17 @@ function Login({ entrar }) {
     return (
         <div className="bg-red-500">
             <h1>Login</h1>
-
             {erro && (
                 <p>
                     {erro}
                 </p>
             )}
-
             <form onSubmit={fazerLogin}>
-
                 <div>
                     <label>
                         Username
                     </label>
-
                     <br />
-
                     <input
                         type="text"
                         value={username}
@@ -88,16 +83,12 @@ function Login({ entrar }) {
                         required
                     />
                 </div>
-
                 <br />
-
                 <div>
                     <label>
                         Password
                     </label>
-
                     <br />
-
                     <input
                         type="password"
                         value={password}
@@ -107,15 +98,11 @@ function Login({ entrar }) {
                         required
                     />
                 </div>
-
                 <br />
-
                 <button type="submit">
                     Entrar
                 </button>
-
             </form>
-
             <p>
                 Não tens uma conta?
                 {" "}
