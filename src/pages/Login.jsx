@@ -114,6 +114,14 @@ function Login({ entrar }) {
                     Entrar
                 </button>
 
+                <p>
+                Ainda nao tenho uma conta
+                {" "}
+                <Link to="/register">
+                    Registrar
+                </Link>
+            </p>
+
             </form>
         </div>
     );
