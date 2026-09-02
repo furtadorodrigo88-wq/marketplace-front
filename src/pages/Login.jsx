@@ -61,7 +61,7 @@ function Login({ entrar }) {
     };
 
     return (
-        <div>
+        <div className="bg-red-500">
             <h1>Login</h1>
 
             {erro && (
